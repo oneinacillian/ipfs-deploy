@@ -1,0 +1,66 @@
+# FROM ubuntu:22.04
+# WORKDIR /app
+# RUN apt-get -y update && apt-get -y upgrade && apt-get -y install wget curl vim systemctl
+# RUN wget https://dist.ipfs.tech/kubo/v0.26.0/kubo_v0.26.0_linux-amd64.tar.gz \
+# && tar xvf kubo_v0.26.0_linux-amd64.tar.gz \
+# && mv ./kubo/ipfs /usr/local/bin/
+# RUN ipfs version && ipfs init
+# # COPY ./files/ipfs-node.service /etc/systemd/system
+# # RUN systemctl daemon-reload
+# CMD ["ipfs", "daemon"]
+
+
+
+
+## Note - Remember to set UDP buffer sizes on host
+# sysctl -w net.core.rmem_max=2500000
+# sysctl -w net.core.wmem_max=2500000
+####
+
+# FROM ubuntu:22.04
+# WORKDIR /app
+# RUN apt-get -y update && apt-get -y upgrade && apt-get -y install wget curl vim systemctl
+# RUN wget https://dist.ipfs.tech/kubo/v0.26.0/kubo_v0.26.0_linux-amd64.tar.gz \
+# && tar xvf kubo_v0.26.0_linux-amd64.tar.gz \
+# && mv ./kubo/ipfs /usr/local/bin/
+# RUN ipfs version && ipfs init
+# RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+# apt-get -y install nodejs && \
+# rm -rf /var/lib/apt/lists/*
+# COPY ./files .
+# RUN npm install node-fetch@2 express node-fetch
+# CMD ["ipfs", "daemon"]
+
+
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install wget curl vim systemctl jq && \
+    wget https://dist.ipfs.tech/kubo/v0.26.0/kubo_v0.26.0_linux-amd64.tar.gz && \
+    tar xvf kubo_v0.26.0_linux-amd64.tar.gz && \
+    mv ./kubo/ipfs /usr/local/bin/ && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get -y install nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Initialize IPFS (might need to handle already initialized case)
+# RUN ipfs version && ipfs init
+
+RUN ipfs version && \
+    ipfs init && \
+    jq '.Swarm.AddrFilters += ["/ip4/10.0.0.0/ipcidr/8", "/ip4/172.16.0.0/ipcidr/12", "/ip4/192.168.0.0/ipcidr/16"]' ~/.ipfs/config > /tmp/config && \
+    mv /tmp/config ~/.ipfs/config
+
+# Copy your Node.js application files and the start script
+COPY ./files .
+RUN chmod +x start.sh
+
+# Install Node.js dependencies
+RUN npm install node-fetch@2 express
+
+# Run the start script when the container starts
+CMD ["./start.sh"]

@@ -1,2 +1,2 @@
-# ipfs-deploy
-Within this repository, containerised version of IPFS deploy
+# ifs-deploy
+Deploy IPFS using docker

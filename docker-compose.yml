@@ -1,0 +1,23 @@
+version: '3'
+services:
+  ipfs:
+    container_name: ipfs
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile.ipfs         
+    ports:
+      - "8080:8080"  # Replace with your desired ports
+      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:4001:4001"
+      - "127.0.0.1:3000:3000"
+    networks:
+      - ipfs
+    volumes:
+      - ipfs:/app/ipfs    
+
+volumes:
+  ipfs:
+
+networks:
+  ipfs:
