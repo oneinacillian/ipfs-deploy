@@ -32,7 +32,24 @@ sysctl -w net.core.wmem_max=7500000
 -  `GF_USERNAME`: Initial Grafana Username
 -  `GF_PASSWORD`: Initial Grafana Password
 
-> IPFS config settings
+Provisioned Dashboard
+
+* Located in grafana/provisioning/dashboards. Example ipfs_dashboard.json available for testing the build
+
+##### Dashboard
+
+<img src="screenshots/Dashboard1.png" alt="Alt text" width="800" />
+
+##### Some counters defined in ipfs_dashboard.json 
+
+<img src="screenshots/Dashboard2.png" alt="Alt text" width="800" />
+
+##### All metrics scraped and explorable (i.e. build your own dashboard)
+
+<img src="screenshots/Dashboard3.png" alt="Alt text" width="800" />
+
+
+> IPFS custom config settings
 
 - `jq '.Swarm.AddrFilters += ["/ip4/10.0.0.0/ipcidr/8", "/ip4/172.16.0.0/ipcidr/12", "/ip4/192.168.0.0/ipcidr/16"]'`: Prevent the node from connecting to peers in private network ranges
 - `jq '.API.HTTPHeaders += {"Access-Control-Allow-Origin": ["*"], "Access-Control-Allow-Methods": ["GET", "POST"]}'`: Allows requests from any origin to access the API (CORS setting) and allow GET and POST methods for API access
