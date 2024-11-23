@@ -7,10 +7,10 @@ services:
       context: .
       dockerfile: Dockerfile.ipfs         
     ports:
-      - "${IPFS_GW_REMOTE_PORT}:8080"
-      - "${IPFS_API_REMOTE_PORT}:5001"
-      - "${IPFS_SWARM_REMOTE_PORT}:4001"
-      - "${IPFS_FRONTEND_REMOTE_PORT}:3000"
+      - "8080:8080"
+      - "50001:5001"
+      - "40001:4001"
+      - "30000:3000"
     networks:
       - ipfs  
     volumes:
@@ -34,8 +34,8 @@ services:
     ports:
       - "3030:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=${GF_USERNAME}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
