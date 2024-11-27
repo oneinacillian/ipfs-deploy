@@ -128,6 +128,14 @@ root@24f9c998fe7b:/app/ipfs/resizetestfile# ls -lah resized-image.png
 Fetching IPFS content for resizing from: http://localhost:5001/api/v0/cat?arg=QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
 ```
 
+##### Some metrics captured during the activity of testing
+
+<img src="screenshots/Dashboard4.png" alt="Alt text" width="800" />
+
+
+
+
+
 | Improvements | Endpoint | Date Implemented | Notes |
 |------------------|----------------|------------------|-------|
 | Added image resizing endpoint | /resize/CID | 2024-11-27 | Send through width and height as per example in this document |
