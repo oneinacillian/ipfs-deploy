@@ -1,0 +1,6 @@
+ipfs add screen_recording_2024-11-26.mov
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=640&height=360" --output resized-video.mp4
+ipfs add screenshot_2024-11-26.png
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" --output resized-image.png
+ipfs pin rm QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY
+ipfs pin rm QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD

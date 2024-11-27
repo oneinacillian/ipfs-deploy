@@ -86,3 +86,49 @@ Creating grafana    ... done
 Creating prometheus ... done
 Creating ipfs       ... done
 ```
+
+### Example Video Resizing Test
+> Check the test results in the resizetestfile folder
+```
+ipfs add screen_recording_2024-11-26.mov
+added QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY screen_recording_2024-11-26.mov
+ 24.23 MiB / 24.23 MiB [============================================================================================================================================================================================================================================================================================================================================================================================] 100.00%
+ 
+ root@24f9c998fe7b:/app/ipfs/resizetestfile# curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=640&height=360" --output resized-video.mp4
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  227k  100  227k    0     0  78363      0  0:00:02  0:00:02 --:--:-- 78358
+
+root@24f9c998fe7b:/app/ipfs/resizetestfile# ls -lah resized-video.mp4 
+-rw-r--r-- 1 root root 228K Nov 27 19:40 resized-video.mp4
+```
+*IPFS console output*
+```
+Fetching video from IPFS: http://localhost:5001/api/v0/cat?arg=QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY
+Video resizing completed!
+```
+
+### Example Image Resizing Test
+> Check the test results in the resizetestfile folder
+```
+root@24f9c998fe7b:/app/ipfs/resizetestfile# ipfs add screenshot_2024-11-26.png
+added QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD screenshot_2024-11-26.png
+ 3.93 MiB / 3.93 MiB [==============================================================================================================================================================================================================================================================================================================================================================================================] 100.00%
+ 
+ root@24f9c998fe7b:/app/ipfs/resizetestfile# curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" --output resized-image.png
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   98k  100   98k    0     0   734k      0 --:--:-- --:--:-- --:--:--  737k
+
+root@24f9c998fe7b:/app/ipfs/resizetestfile# ls -lah resized-image.png 
+-rw-r--r-- 1 root root 99K Nov 27 19:50 resized-image.png
+```
+*IPFS console output*
+```
+Fetching IPFS content for resizing from: http://localhost:5001/api/v0/cat?arg=QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+```
+
+| Improvements | Endpoint | Date Implemented | Notes |
+|------------------|----------------|------------------|-------|
+| Added image resizing endpoint | /resize/CID | 2024-11-27 | Send through width and height as per example in this document |
+| Added video resizing endpoint | /resize-video/CID | 2024-11-27 | Send through width and height as per example in this document  |
