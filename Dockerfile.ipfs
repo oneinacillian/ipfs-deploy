@@ -11,6 +11,7 @@ RUN apt-get -y update && \
     mv ./kubo/ipfs /usr/local/bin/ && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get -y install nodejs && \
+    apt-get -y install ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -31,8 +32,10 @@ RUN ipfs version && \
 COPY ./files .
 RUN chmod +x start.sh
 
+# COPY ./resizetestfile/* .
+
 # Install Node.js dependencies
-RUN npm install node-fetch@2 express
+RUN npm install node-fetch@2 express sharp fluent-ffmpeg
 
 # Run the start script when the container starts
 CMD ["./start.sh"]

@@ -15,6 +15,7 @@ services:
       - ipfs  
     volumes:
       - ipfs:/app/ipfs
+      - ./resizetestfile:/app/ipfs/resizetestfile
 
   prometheus:
     image: prom/prometheus:latest
