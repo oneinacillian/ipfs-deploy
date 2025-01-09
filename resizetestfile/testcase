@@ -4,3 +4,66 @@ ipfs add screenshot_2024-11-26.png
 curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" --output resized-image.png
 ipfs pin rm QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY
 ipfs pin rm QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+
+
+
+ipfs add screenshot_2024-11-26.png
+ipfs pin ls | grep QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+curl "http://localhost:3000/replication-status/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+curl "http://localhost:3000/replication-status/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD" | jq '.replicationStatus'
+
+
+curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+
+
+
+
+
+curl -X POST \
+     -H "Content-Type: application/json" \
+     -d '{"hash":"QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"}' \
+     http://localhost:3000/pin
+
+// Image Test //
+
+ipfs add screenshot_2024-11-26.png 
+added QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD screenshot_2024-11-26.png
+ 3.93 MiB / 3.93 MiB [===================================================================================================================================================================================================================================================================================================================] 100.00%
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"hash":"QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"}' \
+     http://localhost:30000/pin
+{"success":true,"message":"Content pinned","data":{"Pins":["QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"]}}
+curl "http://localhost:30000/replication-status/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD" | jq '.replicationStatus'
+curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+curl -X POST "http://localhost:30000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" --output resized-image.png
+
+
+ipfs pin rm QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+
+// Video Test //
+
+root@7851049fc78f:/app/ipfs/resizetestfile# ipfs add screen_recording_2024-11-26.mov
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=640&height=360" --output resized-video.mp4
+ipfs add resized-video.mp4
+added QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy resized-video.mp4
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"hash":"QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy"}' \
+     http://localhost:3000/pin
+curl "http://localhost:3000/replication-status/QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy" | jq '.replicationStatus'
+curl -X POST "http://localhost:3000/replicate/QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy"
+{"success":true,"message":"Replication process initiated","hash":"QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy","targetCount":3}
+curl -I "https://ipfs.io/ipfs/QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy"
+ipfs pin rm QmevwdT39DebDGNQoasddEBVN5R9qqC7umu8E9D4nguLPy
+ipfs pin rm 
+
+
+
+
+
+
+
+
+// PUBLIC TESTS //
+
+curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+curl -I "https://dweb.link/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
