@@ -124,3 +124,69 @@ Monitor critical IPFS node metrics:
 * Peer Count and Geographic Distribution
 * Bandwidth Usage Patterns
 * Storage Growth Trends
+
+
+## Usage Example
+
+### 1. Adding Content to IPFS
+```bash
+# Add an image to IPFS
+ipfs add screenshot_2024-11-26.png
+```
+> added QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD screenshot_2024-11-26.png
+
+This command adds your file to IPFS and returns a unique content identifier (CID).
+
+### 2. Pinning Content
+```bash
+# Pin the content to ensure persistence
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"hash":"QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"}' \
+     http://localhost:30000/pin
+```
+Pinning prevents the content from being garbage collected and ensures availability.
+
+### 3. Check Replication Status
+```bash
+# Get detailed replication information
+curl "http://localhost:30000/replication-status/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+```
+Sample response:
+```json
+{
+  "replicationCount": 336,
+  "sufficient": true,
+  "overReplicated": true,
+  "minRequired": 3,
+  "maxDesired": 10,
+  "gatewayAvailable": true
+}
+```
+This shows the content is well-replicated across the network and accessible via public gateways.
+
+### 4. Resize Image
+```bash
+# Resize the image to 200x200 pixels
+curl -X POST "http://localhost:30000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" \
+     --output resized-image.png
+```
+Creates a resized version of the image while preserving the original.
+
+### 5. Verify Public Accessibility
+```bash
+# Check if content is available on public IPFS gateway
+curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+```
+A successful response (HTTP 200) confirms the content is accessible through public IPFS gateways.
+
+Key response headers:
+- `content-type: image/png`: Confirms the file type
+- `cache-control: public, max-age=29030400, immutable`: Indicates content is cacheable
+- `x-ipfs-path`: Shows the IPFS path to the content
+- `cf-cache-status`: Cloudflare cache status
+
+This workflow demonstrates:
+- Content addition and pinning
+- Replication monitoring
+- Image processing capabilities
+- Public accessibility verification
