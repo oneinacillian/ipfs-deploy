@@ -177,16 +177,51 @@ Creates a resized version of the image while preserving the original.
 # Check if content is available on public IPFS gateway
 curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
 ```
-A successful response (HTTP 200) confirms the content is accessible through public IPFS gateways.
 
-Key response headers:
-- `content-type: image/png`: Confirms the file type
-- `cache-control: public, max-age=29030400, immutable`: Indicates content is cacheable
-- `x-ipfs-path`: Shows the IPFS path to the content
-- `cf-cache-status`: Cloudflare cache status
+**Key Response Indicators:**
+- ✅ `200` status: Content successfully retrieved
+- 📦 `4.1MB` file size
+- 🔒 `immutable` cache control: Content is permanent
+- 🌍 `rainbow-fr2-03`: Served from French IPFS gateway
+- 🔄 `MISS` cache status: Fresh content retrieval
 
 This workflow demonstrates:
 - Content addition and pinning
 - Replication monitoring
 - Image processing capabilities
 - Public accessibility verification
+
+<details>
+<summary>📋 Raw Response Headers (Reference)</summary>
+
+```http
+HTTP/2 200 
+date: Fri, 10 Jan 2025 11:03:21 GMT
+content-type: image/png
+content-length: 4121032
+access-control-allow-headers: Content-Type
+access-control-allow-headers: Range
+access-control-allow-headers: User-Agent
+access-control-allow-headers: X-Requested-With
+access-control-allow-methods: GET
+access-control-allow-methods: HEAD
+access-control-allow-methods: OPTIONS
+access-control-allow-origin: *
+access-control-expose-headers: Content-Length
+access-control-expose-headers: Content-Range
+access-control-expose-headers: X-Chunked-Output
+access-control-expose-headers: X-Ipfs-Path
+access-control-expose-headers: X-Ipfs-Roots
+access-control-expose-headers: X-Stream-Output
+cache-control: public, max-age=29030400, immutable
+etag: "QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+x-ipfs-path: /ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+x-ipfs-roots: QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD
+x-ipfs-pop: rainbow-fr2-03
+cf-cache-status: MISS
+accept-ranges: bytes
+server: cloudflare
+cf-ray: 8ffc2e156b9739c4-FRA
+alt-svc: h3=":443"; ma=86400
+```
+</details>
