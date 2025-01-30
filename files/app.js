@@ -265,7 +265,10 @@ app.get('/replication-status/:hash', async (req, res) => {
         // First check if the file exists and is pinned locally
         const pinCheckUrl = `http://localhost:5001/api/v0/pin/ls?arg=${hash}`;
         const pinResponse = await fetch(pinCheckUrl, { method: 'POST' });
+        const pinData = await pinResponse.json();
         
+        console.log('Pin check response:', pinData);
+
         if (!pinResponse.ok) {
             return res.status(404).send({ 
                 success: false, 
@@ -277,39 +280,59 @@ app.get('/replication-status/:hash', async (req, res) => {
         const swarmPeersUrl = 'http://localhost:5001/api/v0/swarm/peers';
         const swarmResponse = await fetch(swarmPeersUrl, { method: 'POST' });
         const swarmData = await swarmResponse.json();
+        console.log('Swarm peers response:', swarmData);
+        
         const connectedPeers = swarmData.Peers || [];
 
-        // Get DHT provider information to check replication
-        const providersUrl = `http://localhost:5001/api/v0/dht/findprovs?arg=${hash}&num-providers=100`;
+        // Use the updated routing command format for Kubo v0.27
+        const providersUrl = `http://localhost:5001/api/v0/routing/findprovs?arg=${hash}&num-providers=100`;
         const providersResponse = await fetch(providersUrl, { method: 'POST' });
         
         if (!providersResponse.ok) {
-            throw new Error('Failed to fetch providers information');
+            throw new Error(`Failed to fetch providers information: ${providersResponse.statusText}`);
         }
 
-        // Process the response as text and handle line by line
+        // Read the response as text first
+        const responseText = await providersResponse.text();
+        console.log('Raw providers response:', responseText);
+
         const providers = new Set();
         const providerDetails = new Map();
-        const responseText = await providersResponse.text();
-        const lines = responseText.split('\n').filter(line => line.trim());
 
-        for (const line of lines) {
-            try {
-                const response = JSON.parse(line);
-                if (response.Responses) {
-                    response.Responses.forEach(peer => {
-                        providers.add(peer.ID);
-                        // Store additional peer information
-                        providerDetails.set(peer.ID, {
-                            id: peer.ID,
-                            addresses: peer.Addrs || [],
-                            isConnected: connectedPeers.some(p => p.Peer === peer.ID)
+        // Try to parse the response
+        try {
+            // Split the response by newlines and process each line
+            const lines = responseText.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+                try {
+                    const entry = JSON.parse(line);
+                    console.log('Processing provider entry:', entry);
+
+                    // Handle different response formats
+                    if (entry.Peer) {
+                        // New format
+                        providers.add(entry.Peer);
+                        providerDetails.set(entry.Peer, {
+                            id: entry.Peer,
+                            addresses: entry.Addrs || [],
+                            isConnected: connectedPeers.some(p => p.Peer === entry.Peer)
                         });
-                    });
+                    } else if (entry.ID) {
+                        // Alternative format
+                        providers.add(entry.ID);
+                        providerDetails.set(entry.ID, {
+                            id: entry.ID,
+                            addresses: entry.Addrs || [],
+                            isConnected: connectedPeers.some(p => p.Peer === entry.ID)
+                        });
+                    }
+                } catch (parseError) {
+                    console.warn('Failed to parse provider line:', parseError.message);
                 }
-            } catch (e) {
-                console.error('Error parsing provider response line:', e);
             }
+        } catch (parseError) {
+            console.error('Error parsing providers response:', parseError);
         }
 
         // Check if content is available on IPFS Gateway
@@ -326,13 +349,7 @@ app.get('/replication-status/:hash', async (req, res) => {
         const sufficient = replicationCount >= MIN_REPLICATION_COUNT;
         const overReplicated = replicationCount > MAX_REPLICATION_COUNT;
 
-        // Get detailed provider information
-        const providersList = Array.from(providerDetails.values()).map(provider => ({
-            ...provider,
-            location: provider.addresses.find(addr => addr.includes('/ip4/'))?.split('/')[2] || 'unknown'
-        }));
-
-        res.send({
+        const response = {
             success: true,
             hash,
             replicationStatus: {
@@ -347,21 +364,22 @@ app.get('/replication-status/:hash', async (req, res) => {
                 connectedPeers: connectedPeers.length,
                 totalProviders: providers.size
             },
-            providers: providersList,
-            swarmConnections: connectedPeers.map(peer => ({
-                id: peer.Peer,
-                addresses: peer.Addr,
-                latency: peer.Latency,
-                direction: peer.Direction
-            }))
-        });
+            providers: Array.from(providerDetails.values()),
+            debug: {
+                rawResponse: responseText // Include raw response for debugging
+            }
+        };
+
+        console.log('Final response:', response);
+        res.send(response);
 
     } catch (error) {
         console.error('Error checking replication:', error);
         res.status(500).send({
             success: false,
             message: error.message,
-            hash
+            hash,
+            stack: error.stack
         });
     }
 });

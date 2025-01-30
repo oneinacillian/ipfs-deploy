@@ -105,6 +105,23 @@ docker-compose up -d --build
 | Replication Management | `/replication-status/:hash` | Monitor content availability |
 | Content Distribution | `/replicate/:hash` | Ensure content redundancy |
 
+| Feature | Details | Benefits |
+|---------|----------|----------|
+| Updated to Kubo v0.27.0 | Latest IPFS node implementation | Improved routing, better DHT performance, enhanced stability |
+| Node.js 20.x LTS | Updated runtime environment | Better performance, improved security, latest ECMAScript features |
+| Locked NPM Dependencies | Specific versions for node-fetch, express, sharp, and fluent-ffmpeg | Ensures consistent builds and prevents dependency conflicts |
+| Enhanced Provider Discovery | Updated routing/findprovs implementation | More reliable content discovery and replication tracking |
+| Improved Error Handling | Better response parsing and debug logging | Easier troubleshooting and more stable operation |
+
+### Purpose
+The IPFS Deploy stack provides a robust, containerized IPFS node with enhanced content management capabilities. Recent updates focus on:
+
+* **Improved Reliability**: Using Kubo v0.27.0's enhanced routing system for better content discovery and distribution
+* **Enhanced Performance**: Node.js 20.x LTS provides significant performance improvements and better memory management
+* **Build Consistency**: Locked NPM dependencies ensure reproducible builds across different environments
+* **Better Debugging**: Enhanced logging and error handling make system maintenance and troubleshooting more efficient
+* **Future-Proof**: Latest stable versions of all components ensure longer-term support and security updates
+
 ## Monitoring Dashboard
 
 ### Overview
