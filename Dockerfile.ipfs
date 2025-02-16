@@ -6,10 +6,10 @@ WORKDIR /app
 RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install wget curl vim systemctl jq && \
-    wget https://dist.ipfs.tech/kubo/v0.26.0/kubo_v0.26.0_linux-amd64.tar.gz && \
-    tar xvf kubo_v0.26.0_linux-amd64.tar.gz && \
+    wget https://dist.ipfs.tech/kubo/v0.27.0/kubo_v0.27.0_linux-amd64.tar.gz && \
+    tar xvf kubo_v0.27.0_linux-amd64.tar.gz && \
     mv ./kubo/ipfs /usr/local/bin/ && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get -y install nodejs && \
     apt-get -y install ffmpeg && \
     rm -rf /var/lib/apt/lists/*
@@ -35,7 +35,7 @@ RUN chmod +x start.sh
 # COPY ./resizetestfile/* .
 
 # Install Node.js dependencies
-RUN npm install node-fetch@2 express sharp fluent-ffmpeg
+RUN npm install node-fetch@2.6.12 express@4.18.3 sharp@0.33.2 fluent-ffmpeg@2.1.2
 
 # Run the start script when the container starts
 CMD ["./start.sh"]
