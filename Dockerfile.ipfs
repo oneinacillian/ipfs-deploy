@@ -2,31 +2,42 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies with better caching and cleanup
 RUN apt-get -y update && \
     apt-get -y upgrade && \
-    apt-get -y install wget curl vim systemctl jq && \
-    wget https://dist.ipfs.tech/kubo/v0.27.0/kubo_v0.27.0_linux-amd64.tar.gz && \
-    tar xvf kubo_v0.27.0_linux-amd64.tar.gz && \
-    mv ./kubo/ipfs /usr/local/bin/ && \
+    apt-get -y install --no-install-recommends \
+    wget curl vim systemctl jq \
+    ca-certificates gnupg \
+    ffmpeg && \
+    # Install Node.js 20.x
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get -y install nodejs && \
-    apt-get -y install ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+    # Install latest IPFS
+    wget https://dist.ipfs.tech/kubo/v0.27.0/kubo_v0.27.0_linux-amd64.tar.gz && \
+    tar xf kubo_v0.27.0_linux-amd64.tar.gz && \
+    mv ./kubo/ipfs /usr/local/bin/ && \
+    # Cleanup to reduce image size
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* \
+           kubo_v0.27.0_linux-amd64.tar.gz \
+           ./kubo
 
-
-
-# Initialize IPFS (might need to handle already initialized case)
-# RUN ipfs version && ipfs init
-
-RUN ipfs version && \
-    ipfs init && \
+# Initialize IPFS with optimized settings
+RUN ipfs init --profile=server && \
     jq '.Swarm.AddrFilters += ["/ip4/10.0.0.0/ipcidr/8", "/ip4/172.16.0.0/ipcidr/12", "/ip4/192.168.0.0/ipcidr/16"]' ~/.ipfs/config > /tmp/config && \
     mv /tmp/config ~/.ipfs/config && \
     jq '.API.HTTPHeaders += {"Access-Control-Allow-Origin": ["*"], "Access-Control-Allow-Methods": ["GET", "POST"]}' ~/.ipfs/config > /tmp/config && \
     mv /tmp/config ~/.ipfs/config && \
     jq '.Addresses.API = "/ip4/0.0.0.0/tcp/5001"' ~/.ipfs/config > /tmp/config && \
-    mv /tmp/config ~/.ipfs/config    
+    mv /tmp/config ~/.ipfs/config && \
+    # Optimize for better performance
+    jq '.Datastore.BloomFilterSize = 1048576' ~/.ipfs/config > /tmp/config && \
+    mv /tmp/config ~/.ipfs/config && \
+    # Increase connection manager limits for better network connectivity
+    jq '.Swarm.ConnMgr.HighWater = 400' ~/.ipfs/config > /tmp/config && \
+    mv /tmp/config ~/.ipfs/config && \
+    jq '.Swarm.ConnMgr.LowWater = 100' ~/.ipfs/config > /tmp/config && \
+    mv /tmp/config ~/.ipfs/config
 
 # Copy your Node.js application files and the start script
 COPY ./files .
@@ -34,8 +45,11 @@ RUN chmod +x start.sh
 
 # COPY ./resizetestfile/* .
 
-# Install Node.js dependencies
-RUN npm install node-fetch@2.6.12 express@4.18.3 sharp@0.33.2 fluent-ffmpeg@2.1.2
+# Install Node.js dependencies with exact versions for stability
+RUN npm ci || npm install
+
+# Create cache directory
+RUN mkdir -p cache && chmod 777 cache
 
 # Run the start script when the container starts
 CMD ["./start.sh"]

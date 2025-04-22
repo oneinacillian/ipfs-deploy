@@ -64,13 +64,20 @@ sysctl -w net.core.wmem_max=7500000
 ### Content Processing
 * `POST /resize/:hash`
   - Resizes images stored on IPFS
-  - Params: `width` and `height` query parameters
-  - Example: `/resize/QmHash?width=200&height=200`
+  - Params: 
+    - `width` and `height`: Required dimensions in pixels
+    - `format`: Output format (webp, avif, jpeg, png) - default: webp
+    - `quality`: Compression quality (1-100) - default: 80
+  - Example: `/resize/QmHash?width=200&height=200&format=avif&quality=90`
 
 * `POST /resize-video/:hash`
   - Resizes videos stored on IPFS
-  - Params: `width` and `height` query parameters
-  - Example: `/resize-video/QmHash?width=640&height=360`
+  - Params: 
+    - `width` and `height`: Required dimensions in pixels
+    - `format`: Output format (mp4, webm) - default: mp4
+    - `crf`: Compression quality (0-51, lower is better) - default: 23
+    - `preset`: Encoding speed/quality preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow) - default: medium
+  - Example: `/resize-video/QmHash?width=640&height=360&format=webm&crf=18&preset=slow`
 
 ### Network Management
 * `GET /replication-status/:hash`
@@ -81,6 +88,12 @@ sysctl -w net.core.wmem_max=7500000
   - Actively manages content replication
   - Optional params: `targetCount`, `maxAttempts`, `checkInterval`
   - Ensures content availability across the network
+
+### System Monitoring
+* `GET /health`
+  - Provides system health information
+  - Returns IPFS node status, version, peer count, and uptime
+  - Example: `/health`
 
 ## Monitoring
 Grafana dashboards are available at `http://localhost:3000` with pre-configured IPFS metrics:
@@ -98,20 +111,32 @@ docker-compose up -d --build
 
 ## Recent Improvements
 
-| Feature | Endpoint | Purpose |
-|---------|----------|----------|
-| Image Resizing | `/resize/:hash` | Dynamically resize IPFS-stored images |
-| Video Resizing | `/resize-video/:hash` | Resize video content with quality preservation |
-| Replication Management | `/replication-status/:hash` | Monitor content availability |
-| Content Distribution | `/replicate/:hash` | Ensure content redundancy |
-
+### Enhanced Image Processing
 | Feature | Details | Benefits |
-|---------|----------|----------|
+|---------|---------|----------|
+| Multiple Image Formats | Support for WebP, AVIF, JPEG, and PNG | Better compression options and browser compatibility |
+| Quality Control | Adjustable compression quality (1-100) | Balance between file size and visual quality |
+| Caching System | 24-hour cache for processed images | Faster response times and reduced processing load |
+
+### Advanced Video Processing
+| Feature | Details | Benefits |
+|---------|---------|----------|
+| Multiple Video Formats | Support for MP4 and WebM | Better compatibility with different platforms |
+| Quality Control | Adjustable CRF values (0-51) | Fine-grained control over compression quality |
+| Encoding Presets | Options from ultrafast to veryslow | Balance between encoding speed and quality |
+| Streaming Optimization | Web-optimized output with faststart | Better playback experience in browsers |
+
+### System Improvements
+| Feature | Details | Benefits |
+|---------|---------|----------|
+| Health Monitoring | New `/health` endpoint | Easy system status verification |
+| Improved Error Handling | Better timeout management and error reporting | More reliable operation |
+| Content Availability Checks | Enhanced content verification before processing | Prevents processing failures |
+| Caching System | Automatic caching of processed assets | Improved performance and reduced load |
 | Updated to Kubo v0.27.0 | Latest IPFS node implementation | Improved routing, better DHT performance, enhanced stability |
 | Node.js 20.x LTS | Updated runtime environment | Better performance, improved security, latest ECMAScript features |
 | Locked NPM Dependencies | Specific versions for node-fetch, express, sharp, and fluent-ffmpeg | Ensures consistent builds and prevents dependency conflicts |
 | Enhanced Provider Discovery | Updated routing/findprovs implementation | More reliable content discovery and replication tracking |
-| Improved Error Handling | Better response parsing and debug logging | Easier troubleshooting and more stable operation |
 
 ### Purpose
 The IPFS Deploy stack provides a robust, containerized IPFS node with enhanced content management capabilities. Recent updates focus on:
@@ -181,15 +206,44 @@ Sample response:
 ```
 This shows the content is well-replicated across the network and accessible via public gateways.
 
-### 4. Resize Image
+### 4. Resize Image with Advanced Options
 ```bash
-# Resize the image to 200x200 pixels
-curl -X POST "http://localhost:30000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200" \
-     --output resized-image.png
+# Resize the image to 200x200 pixels with AVIF format and high quality
+curl -X POST "http://localhost:30000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=200&height=200&format=avif&quality=90" \
+     --output resized-image.avif
 ```
-Creates a resized version of the image while preserving the original.
+Creates a resized version of the image in AVIF format with 90% quality, providing excellent compression while maintaining visual fidelity.
 
-### 5. Verify Public Accessibility
+### 5. Process Video with Custom Settings
+```bash
+# Resize video to 720p with high quality and WebM format
+curl -X POST "http://localhost:30000/resize-video/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=1280&height=720&format=webm&crf=18&preset=slow" \
+     --output processed-video.webm
+```
+Converts the video to 720p resolution in WebM format with high quality (CRF 18) using the "slow" preset for better compression efficiency.
+
+### 6. Check System Health
+```bash
+# Get system health information
+curl "http://localhost:30000/health"
+```
+Sample response:
+```json
+{
+  "status": "healthy",
+  "ipfs": {
+    "version": "0.27.0",
+    "commit": "v0.27.0-rc1/go1.21.3"
+  },
+  "network": {
+    "peers": 42
+  },
+  "uptime": 86400.32
+}
+```
+Provides a quick overview of system health, IPFS version, connected peers, and uptime in seconds.
+
+### 7. Verify Public Accessibility
 ```bash
 # Check if content is available on public IPFS gateway
 curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
@@ -205,7 +259,8 @@ curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
 This workflow demonstrates:
 - Content addition and pinning
 - Replication monitoring
-- Image processing capabilities
+- Advanced image and video processing capabilities
+- System health monitoring
 - Public accessibility verification
 
 <details>
