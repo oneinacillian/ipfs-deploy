@@ -67,3 +67,54 @@ ipfs pin rm
 
 curl -I "https://ipfs.io/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
 curl -I "https://dweb.link/ipfs/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD"
+
+
+
+
+
+
+//-------------------New Testing-------------------//
+
+Health Endpoint
+
+root@8e1d7eb1d116:/app/ipfs/resizetestfile# curl http://localhost:3000/health | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   106  100   106    0     0  37548      0 --:--:-- --:--:-- --:--:-- 53000
+{
+  "status": "healthy",
+  "ipfs": {
+    "version": "0.27.0",
+    "commit": ""
+  },
+  "network": {
+    "peers": 74
+  },
+  "uptime": 185.783647421
+}
+
+
+ipfs add screenshot_2024-11-26.png
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600" -o resized.webp
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=avif" -o resized.avif
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=jpeg&quality=85" -o resized.jpg
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=png" -o resized.png
+
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=webp&quality=90" -o high_quality.webp
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=webp&quality=70" -o medium_quality.webp
+curl -X POST "http://localhost:3000/resize/QmRKzqRi9c1HHmPxKXnUTKnyhnCAm6wxrUy6eHyMxwUuoD?width=800&height=600&format=webp&quality=40" -o low_quality.webp
+
+
+ipfs add screen_recording_2024-11-26.mov  
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720" -o resized.mp4
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&format=webm" -o resized.webm
+
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&crf=18" -o high_quality.mp4
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&crf=23" -o medium_quality.mp4
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&crf=28" -o low_quality.mp4
+
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&preset=veryfast" -o fast_encode.mp4
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&preset=medium" -o medium_encode.mp4
+curl -X POST "http://localhost:3000/resize-video/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=1280&height=720&preset=slow" -o slow_encode.mp4
+
+time curl -X POST "http://localhost:3000/resize/QmXafmZy8YTmU3B4v7Y2ux7Qg3XWrCZFiYqbPWfPQ8ZFUY?width=800&height=600" -o first_request.webp

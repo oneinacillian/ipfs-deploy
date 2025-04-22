@@ -13,7 +13,7 @@
     "dependencies": {
       "express": "^4.18.2",
       "node-fetch": "^2.7.0",
-      "sharp": "^0.32.1",
+      "sharp": "^0.33.2",
       "fluent-ffmpeg": "^2.1.2"
     }
   }

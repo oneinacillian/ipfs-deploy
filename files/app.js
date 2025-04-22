@@ -5,6 +5,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const app = express();
 const PORT = 3000;
@@ -19,6 +20,42 @@ app.use(express.json());
 const MIN_REPLICATION_COUNT = 3; // Minimum desired replicas
 const REPLICATION_CHECK_TIMEOUT = 5000; // Timeout for replication checks in ms
 const MAX_REPLICATION_COUNT = 10; // Example maximum desired replicas
+
+// Add cache directory
+const CACHE_DIR = path.join(__dirname, 'cache');
+if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR);
+}
+
+// Helper function to generate cache key
+function generateCacheKey(hash, params) {
+    const paramsStr = JSON.stringify(params);
+    return crypto.createHash('md5').update(`${hash}-${paramsStr}`).digest('hex');
+}
+
+// Add cache middleware
+function cacheMiddleware(req, res, next) {
+    const hash = req.params.hash;
+    const params = { ...req.query };
+    const cacheKey = generateCacheKey(hash, params);
+    const cachePath = path.join(CACHE_DIR, cacheKey);
+    
+    // Check if cached version exists
+    if (fs.existsSync(cachePath)) {
+        const stats = fs.statSync(cachePath);
+        const fileAge = Date.now() - stats.mtimeMs;
+        
+        // Cache valid for 24 hours
+        if (fileAge < 24 * 60 * 60 * 1000) {
+            console.log(`Serving cached version for ${hash}`);
+            return res.sendFile(cachePath);
+        }
+    }
+    
+    // Store cache path for later use
+    req.cachePath = cachePath;
+    next();
+}
 
 // Add timeout wrapper for fetch requests
 async function fetchWithTimeout(url, options = {}, timeout = 30000) {
@@ -146,10 +183,12 @@ async function ensureContentAvailable(hash, timeout = 30000) {
 }
 
 // Update the resize endpoint to handle content availability
-app.post('/resize/:hash', async (req, res) => {
+app.post('/resize/:hash', cacheMiddleware, async (req, res) => {
     const hash = req.params.hash;
     const width = parseInt(req.query.width, 10);
     const height = parseInt(req.query.height, 10);
+    const format = req.query.format || 'webp'; // Add format option (webp, avif, jpeg, png)
+    const quality = parseInt(req.query.quality, 10) || 80; // Add quality parameter
 
     if (!hash) {
         return res.status(400).send({ success: false, message: 'No IPFS hash provided' });
@@ -177,14 +216,42 @@ app.post('/resize/:hash', async (req, res) => {
             throw new Error(`IPFS error: ${response.statusText}`);
         }
 
-        // Process the image with sharp
+        // Process the image with sharp with enhanced options
         const buffer = await response.buffer();
-        const resizedImage = await sharp(buffer)
-            .resize(width, height)
-            .toBuffer();
-
-        res.set('Content-Type', 'image/png');
-        res.send(resizedImage);
+        let resizedImage = sharp(buffer).resize(width, height);
+        
+        // Apply format and quality
+        switch(format) {
+            case 'webp':
+                resizedImage = resizedImage.webp({ quality });
+                res.set('Content-Type', 'image/webp');
+                break;
+            case 'avif':
+                resizedImage = resizedImage.avif({ quality });
+                res.set('Content-Type', 'image/avif');
+                break;
+            case 'jpeg':
+            case 'jpg':
+                resizedImage = resizedImage.jpeg({ quality });
+                res.set('Content-Type', 'image/jpeg');
+                break;
+            case 'png':
+                resizedImage = resizedImage.png({ quality });
+                res.set('Content-Type', 'image/png');
+                break;
+            default:
+                resizedImage = resizedImage.webp({ quality });
+                res.set('Content-Type', 'image/webp');
+        }
+        
+        const outputBuffer = await resizedImage.toBuffer();
+        
+        // Save to cache if caching is enabled
+        if (req.cachePath) {
+            fs.writeFileSync(req.cachePath, outputBuffer);
+        }
+        
+        res.send(outputBuffer);
     } catch (error) {
         console.error('Error resizing image:', error);
         res.status(500).send({ success: false, message: error.message });
@@ -196,6 +263,9 @@ app.post('/resize-video/:hash', async (req, res) => {
     const hash = req.params.hash;
     const width = req.query.width;
     const height = req.query.height;
+    const format = req.query.format || 'mp4'; // Add format option
+    const crf = parseInt(req.query.crf, 10) || 23; // Compression quality (lower is better)
+    const preset = req.query.preset || 'medium'; // Encoding preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
 
     if (!hash || !width || !height) {
         return res.status(400).send({ success: false, message: 'CID, width, and height are required' });
@@ -218,9 +288,10 @@ app.post('/resize-video/:hash', async (req, res) => {
             throw new Error(`IPFS error: ${response.statusText}`);
         }
 
-        // Create temporary files
-        const inputFile = path.join(__dirname, 'temp-input.mp4');
-        const outputFile = path.join(__dirname, 'temp-output.mp4');
+        // Create temporary files with unique names to avoid conflicts
+        const uniqueId = Date.now();
+        const inputFile = path.join(__dirname, `temp-input-${uniqueId}.mp4`);
+        const outputFile = path.join(__dirname, `temp-output-${uniqueId}.${format}`);
         const writeStream = fs.createWriteStream(inputFile);
 
         response.body.pipe(writeStream);
@@ -230,15 +301,41 @@ app.post('/resize-video/:hash', async (req, res) => {
             writeStream.on('error', reject);
         });
 
-        // Process with FFmpeg
+        // Process with FFmpeg with enhanced options
         await new Promise((resolve, reject) => {
-            ffmpeg(inputFile)
+            let ffmpegCommand = ffmpeg(inputFile)
                 .size(`${width}x${height}`)
-                .output(outputFile)
+                .videoCodec('libx264')
+                .outputOptions([
+                    `-crf ${crf}`,
+                    `-preset ${preset}`,
+                    '-movflags faststart' // Optimize for web streaming
+                ]);
+                
+            // Set format-specific options
+            if (format === 'webm') {
+                ffmpegCommand = ffmpegCommand
+                    .videoCodec('libvpx-vp9')
+                    .outputOptions([
+                        '-b:v 0',
+                        `-crf ${crf}`,
+                        '-deadline good'
+                    ]);
+            }
+            
+            ffmpegCommand.output(outputFile)
                 .on('end', resolve)
                 .on('error', reject)
                 .run();
         });
+
+        // Set appropriate content type
+        const contentTypes = {
+            'mp4': 'video/mp4',
+            'webm': 'video/webm',
+            'mkv': 'video/x-matroska'
+        };
+        res.set('Content-Type', contentTypes[format] || 'video/mp4');
 
         // Send the result and clean up
         res.sendFile(outputFile, () => {
@@ -480,6 +577,45 @@ async function checkReplicationCount(hash) {
 
     return providers.size;
 }
+
+// Add health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        // Check IPFS node status
+        const versionUrl = 'http://localhost:5001/api/v0/version';
+        const versionResponse = await fetchWithTimeout(versionUrl, { method: 'POST' }, 5000);
+        
+        if (!versionResponse.ok) {
+            throw new Error('IPFS node not responding');
+        }
+        
+        const versionData = await versionResponse.json();
+        
+        // Check swarm peers
+        const peersUrl = 'http://localhost:5001/api/v0/swarm/peers';
+        const peersResponse = await fetchWithTimeout(peersUrl, { method: 'POST' }, 5000);
+        const peersData = await peersResponse.json();
+        const peerCount = (peersData.Peers || []).length;
+        
+        res.send({
+            status: 'healthy',
+            ipfs: {
+                version: versionData.Version,
+                commit: versionData.Commit
+            },
+            network: {
+                peers: peerCount
+            },
+            uptime: process.uptime()
+        });
+    } catch (error) {
+        console.error('Health check failed:', error);
+        res.status(500).send({
+            status: 'unhealthy',
+            error: error.message
+        });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
